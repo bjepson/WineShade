@@ -82,9 +82,9 @@ void setup() {
     bargraphs[i]->setValue(0);
 
   }
-  bargraphs[0]->setStartPin(26);
+  bargraphs[0]->setStartPin(40);
   bargraphs[1]->setStartPin(33);
-  bargraphs[2]->setStartPin(40);
+  bargraphs[2]->setStartPin(26);
 
   Serial.begin(9600);
 }
@@ -133,7 +133,7 @@ void loop()
     }
 
     // Strobe the bar graph
-    bargraphs[i]->light(true);
+    bargraphs[i]->light();
 
 
   }
