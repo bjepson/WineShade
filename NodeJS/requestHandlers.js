@@ -92,7 +92,8 @@ function vote(query, response) {
         db.serialize(function() {
 
             var counts = [0, 0, 0];
-            if (button > counts.length - 1) {
+            console.log(button);
+            if (button > counts.length - 1 || button.length > 1) {
 
                 console.log("Warning: button #" + button + 
                             " is higher than last array element " + 

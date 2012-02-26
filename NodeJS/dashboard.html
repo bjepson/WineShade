@@ -10,33 +10,44 @@
             $.getJSON("/fetch",
                 function(data) {
                     
-                    $('#stations').empty();
+                    //$('#stations').empty();
                     $.each(data, function(station_id, station){
-                        $("<div/>").attr("id", station_id).appendTo("#stations");
-                        var station_sel = $("#" + station_id);
+
+                        var station_sel = "#" + station_id;
+                        if ($(station_sel).length == 0) {
+                            $("<div/>").attr("id", station_id).appendTo("#stations");
+                            $("<h1/>").appendTo($(station_sel));
+                        }
+                        $(station_sel + " h1").text("Station ID " + station_id);
                         
-                        $("<h1>Station ID " + station_id + "</h1>").appendTo(station_sel);
-                        
-                        $.each(station, function(button_id, button) {
+                        $.each(station, function(button_no, count) {
                             
-                            $("<div>Button " + button_id + ": </div>").attr("id", button_id).attr("class", "btnrow").appendTo(station_sel);
-                            var button_sel = station_sel.children("#" + button_id);
+                            button_id = station_id + "_" + button_no;
+                            var button_sel = "#" + button_id;
                             
-                            $("<span>-</span>").attr("id", "minus").attr("class", "btn").appendTo(button_sel).click(function() {
-                                $.get("/vote?s=" + station_id + "&b=" + button_id + "&c=-1");
-                                refreshStations(); // FIXME: just refresh the one button
-                            });
-                            
-                            $("<span>" + button + "</span>").attr("id", "val").attr("class", "btnval").appendTo(button_sel);
-                            
-                            $("<span>+</span>").attr("id", "plus").attr("class", "btn").appendTo(button_sel).click(function() {
-                                $.get("/vote?s=" + station_id + "&b=" + button_id);
-                                refreshStations(); // FIXME: just refresh the one button
-                            });
-                            
+                            if ($(button_sel).length == 0) {
+                                
+                                // Add the button's row
+                                $("<div/>").attr("id", button_id).attr("class", "btnrow").appendTo(station_sel);
+                                
+                                // Add the minus (decrement) button
+                                $("<span>-</span>").attr("class", "btn").appendTo($(button_sel)).click(function() {
+                                    $.get("/vote?s=" + station_id + "&b=" + button_no + "&c=-1");
+                                    refreshStations();
+                                });
+                                
+                                // Add the value label
+                                $("<span/>").attr("class", "btnval").appendTo($(button_sel));
+                                
+                                // Add the plus (increment) button
+                                $("<span>+</span>").attr("class", "btn").appendTo($(button_sel)).click(function() {
+                                    $.get("/vote?s=" + station_id + "&b=" + button_no);
+                                    refreshStations();
+                                });
+                            }
+                            $(button_sel + " .btnval").text(count);                            
                             
                         });
-                        
                         
                     });
                 });
@@ -49,7 +60,7 @@
             {
                 refreshStations();
           
-            }, 50000);
+            }, 100000);
           
           });
           </script>
