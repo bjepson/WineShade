@@ -1,0 +1,30 @@
+.btn {
+    padding: 5px 10px;
+    display: inline;
+    border: none;
+    background: #777;
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    text-shadow: 1px 1px #666;
+}
+
+.btn:hover {
+    background: #999;
+}
+.btn:active {
+    background: #333;
+}
+.btnrow {
+    margin: 15px;
+}
+
+.btnval {
+    display: inline-block;
+    width:30px;
+    text-align:center;
+    
+}

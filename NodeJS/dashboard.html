@@ -1,6 +1,7 @@
 <html>
     <head>
         <title>Data Crush Dashboard</title>
+        <link rel="stylesheet" href="style.css" type="text/css" />
         <script src='http://code.jquery.com/jquery-latest.js'></script>
         <script>
         
@@ -8,23 +9,29 @@
             
             $.getJSON("http://localhost:8888/fetch",
                 function(data) {
+                    
                     $('#stations').empty();
                     $.each(data, function(station_id, station){
                         $("<div/>").attr("id", station_id).appendTo("#stations");
-                        var station_sel = "#" + station_id;
+                        var station_sel = $("#" + station_id);
+                        
                         $("<h1>Station ID " + station_id + "</h1>").appendTo(station_sel);
                         
                         $.each(station, function(button_id, button) {
-                            $("<div>Button " + button_id + ": </div>").attr("id", button_id).appendTo(station_sel);
-                            var button_sel = station_sel + " > #" + button_id;
-                            $("<span>-</span>").attr("id", "minus").appendTo(button_sel).click(function() {
+                            
+                            $("<div>Button " + button_id + ": </div>").attr("id", button_id).attr("class", "btnrow").appendTo(station_sel);
+                            var button_sel = station_sel.children("#" + button_id);
+                            
+                            $("<span>-</span>").attr("id", "minus").attr("class", "btn").appendTo(button_sel).click(function() {
                                 $.get("http://localhost:8888/vote?s=" + station_id + "&b=" + button_id + "&c=-1");
-                                refreshStations();
+                                refreshStations(); // FIXME: just refresh the one button
                             });
-                            $("<span>" + button + "</span>").attr("id", "val").appendTo(button_sel);
-                            $("<span>+</span>").attr("id", "plus").appendTo(button_sel).click(function() {
+                            
+                            $("<span>" + button + "</span>").attr("id", "val").attr("class", "btnval").appendTo(button_sel);
+                            
+                            $("<span>+</span>").attr("id", "plus").attr("class", "btn").appendTo(button_sel).click(function() {
                                 $.get("http://localhost:8888/vote?s=" + station_id + "&b=" + button_id);
-                                refreshStations();
+                                refreshStations(); // FIXME: just refresh the one button
                             });
                             
                             
@@ -42,7 +49,7 @@
             {
                 refreshStations();
           
-            }, 5000);
+            }, 50000);
           
           });
           </script>

@@ -31,9 +31,8 @@ function root(query, response) {
 
 }
 
-function dash(query, response){
+function showFile(query, response, filePath, fileType) {
     
-    var filePath = "dashboard.html";
     path.exists(filePath, function(exists) {
      
         if (exists) {
@@ -43,7 +42,7 @@ function dash(query, response){
                     response.end();
                 }
                 else {
-                    response.writeHead(200, { 'Content-Type': 'text/html' });
+                    response.writeHead(200, { 'Content-Type': fileType });
                     response.end(content, 'utf-8');
                 }
             });
@@ -54,6 +53,17 @@ function dash(query, response){
         }
     });
     
+    
+}
+
+function dash(query, response){
+    var filePath = "dashboard.html";
+    showFile(query, response, filePath, "text/html");
+}
+
+function css(query, response){
+    var filePath = "style.css";
+    showFile(query, response, filePath, "text/css");
 }
 
 function errorResponse(err, response) {
@@ -169,6 +179,9 @@ function fetch(query, response) {
         } else {
           if(!jsonresult[row.station_id]) { 
               jsonresult[row.station_id] = {};
+              jsonresult[row.station_id][0] = 0; // FIXME replace this with a for loop that knows the # of buttons
+              jsonresult[row.station_id][1] = 0;
+              jsonresult[row.station_id][2] = 0;
           }
           jsonresult[row.station_id][row.button] = row.total;
         }
@@ -194,6 +207,7 @@ function fetch(query, response) {
   
 }
 
+exports.css = css;
 exports.dash = dash;
 exports.fetch = fetch;
 exports.root = root;

@@ -8,5 +8,6 @@ handle["/"] = requestHandlers.root;
 handle["/vote"] = requestHandlers.vote;
 handle["/fetch"] = requestHandlers.fetch;
 handle["/dash"] = requestHandlers.dash;
+handle["/style.css"] = requestHandlers.css;
 
 server.start(router.route, handle);
