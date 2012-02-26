@@ -15,6 +15,8 @@ BarGraph *bargraphs[3];
 
 int total = 0;
 
+String my_address = "UNDEFINED";
+
 boolean debounce(int pin)
 {
   boolean state;
@@ -68,7 +70,157 @@ void log() {
   Serial.println("/12)");
 }
 
+void flushMe() {
+  delay(100);
+  Serial.println("Clearing any incoming serial data.");
+  while(Serial1.available()) { // FIXME: does this need a timeout?
+    char c = (char) Serial1.read();
+    Serial.print(c);
+    delay(1);
+  }
+  Serial.println("Done clearing incoming serial data.");
+}
+
+void vote(int button) {
+
+  flushMe();
+  Serial1.println("http://192.168.2.1:8888/vote?s=" + my_address + "&b=" + button); 
+  delay(250);
+  if (!getVotes()) {
+    panic(); // FIXME: recover by sending abort and trying again
+  }
+
+}
+
+boolean getVotes() {
+
+  delay(100);
+  for (int i = 0; i < numButtons; i++) {
+    counts[i] = 0;
+  }
+
+  int curr_button = 0;
+  boolean finished = false;
+  while (!finished && Serial1.available() > 0) { // FIXME: does this need a timeout?
+
+    char ch = Serial1.read(); 
+    Serial.print(ch);
+    if(ch >= '0' && ch <= '9') {
+      counts[curr_button] = (counts[curr_button]  * 10) + (ch - '0');
+    } 
+    else if (ch == ':') {
+      curr_button++;
+    } 
+    else {
+      finished = true;
+    }
+  }
+
+  total = 0;
+  for (int i = 0; i < numButtons; i++) {
+    total += counts[i];
+  }
+  if (curr_button < numButtons - 1) {
+    return false;
+
+  } 
+  else {
+    return true;
+  }
+}
+
+boolean panic() {
+
+  Serial.println("Sorry boss. Couldn't recover from this one.");
+  while (1) {
+    digitalWrite(leds[0], LOW);
+    digitalWrite(leds[1], LOW);
+    digitalWrite(leds[2], LOW);
+
+    delay(250);
+    digitalWrite(leds[0], HIGH);
+    digitalWrite(leds[1], HIGH);
+    digitalWrite(leds[2], HIGH);
+    delay(250);
+  }
+}
+
+boolean configureRadio() {
+  Serial.flush();
+
+  // put the radio in command mode: 
+  Serial.println("Setting XBee command mode");
+  Serial1.print("+++"); 
+  delay(100);
+
+  String ok_response = "OK\r"; // the response we expect.
+  my_address = "";
+
+  // Read the text of the response into the response variable
+  String response = String("");
+  while (response.length() < ok_response.length()) { 
+    if (Serial1.available() > 0) {
+      response += (char) Serial1.read(); 
+    }
+  }
+
+  // If we got the right response, configure the radio and return true. 
+  if (response.equals(ok_response)) {
+    Serial.println("Requesting high portion of XBee address");
+    Serial1.print("ATSH\r"); // Get high portion of address
+    delay(100);
+    while (Serial1.available() > 0) {
+      char c = (char) Serial1.read(); 
+      if ( (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')) {
+        my_address += c;
+      }
+    }
+
+    Serial.println("Requesting low portion of XBee address");
+    Serial1.print("ATSL\r"); // Get low portion of address
+    delay(100);
+    while (Serial1.available() > 0) {
+      char c = (char) Serial1.read(); 
+      if ( (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')) {
+        my_address += c;
+      }
+    }
+    Serial.println("My address: [" + my_address + "]");
+
+
+    Serial1.print("ATCN\r"); // back to data mode
+    String response = String("");
+    while (response.length() < ok_response.length()) { 
+      if (Serial1.available() > 0) {
+        response += (char) Serial1.read();
+      }
+    }
+
+    return true; 
+  } 
+  else {
+    return false; // This indicates the response was incorrect. 
+  }
+
+}
+
 void setup() {
+
+  Serial.begin(9600);
+  Serial.println("Booted. Waiting for XBee to warm up."); // FIXME: check XBee to see if it's associated instead of twiddling yer thumbs
+  Serial1.begin(115200); // The XBee
+  delay(10000);
+
+  if (!configureRadio()) {
+    panic();
+  }
+
+  flushMe();
+  Serial1.println("http://192.168.2.1:8888/stationVotes?s=" + my_address); 
+  delay(250);
+  if (!getVotes()) {
+    panic(); // FIXME: recover by sending abort and trying again
+  }
 
   for (int i = 0; i < numButtons; i++) {
 
@@ -86,7 +238,20 @@ void setup() {
   bargraphs[1]->setStartPin(33);
   bargraphs[2]->setStartPin(26);
 
-  Serial.begin(9600);
+  recalculatePercentages();
+
+}
+
+void recalculatePercentages() {
+
+  // Recalculate all percentages
+  for (int j = 0; j < numButtons; j++) {
+    // Recalculate the bargraph value     
+    int percent = counts[j] * 100 / total;
+    int scaled = percent == 0 ? 0: map(percent, 1, 100, 1, 12);
+    bargraphs[j]->setValue(scaled);
+  }
+
 }
 
 void loop()
@@ -105,6 +270,7 @@ void loop()
 
       Serial.println("Blinking the button you pressed");
       // Blink the button the user just pressed.
+      vote(i); // Transmit the vote to the server
       for (int j = 0; j < 3; j++) {
         digitalWrite(leds[i], HIGH);
         delay(blinkDelay);
@@ -117,19 +283,9 @@ void loop()
       digitalWrite(leds[1], HIGH);
       digitalWrite(leds[2], HIGH);
 
-      // Increment the button's counter and the total
-      counts[i]++;
-      total++;
-
       log(); // Log the current values
 
-      // Recalculate all percentages
-      for (int j = 0; j < numButtons; j++) {
-        // Recalculate the bargraph value     
-        int percent = counts[j] * 100 / total;
-        int scaled = percent == 0 ? 0: map(percent, 1, 100, 1, 12);
-        bargraphs[j]->setValue(scaled);
-      }
+      recalculatePercentages();
     }
 
     // Strobe the bar graph
@@ -139,6 +295,16 @@ void loop()
   }
 
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

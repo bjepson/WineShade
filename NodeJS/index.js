@@ -7,6 +7,7 @@ handle["/"] = requestHandlers.dash;
 handle["/vote"] = requestHandlers.vote;
 handle["/fetch"] = requestHandlers.fetch;
 handle["/dash"] = requestHandlers.dash;
+handle["/stationVotes"] = requestHandlers.stationVotes;
 handle["/style.css"] = requestHandlers.css;
 
 server.start(router.route, handle);

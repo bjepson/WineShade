@@ -1,5 +1,7 @@
 
-* Create a UI to give meaningful names to buttons and stations
+* Create a way to give meaningful names to stations
 * Create data exports
 * Add busy indicator while processing + and -
 * Fritzing diagrams for stations
+* Break out artificial votes into a separate table
+* Button to start new run.

@@ -62,9 +62,56 @@ function errorResponse(err, response) {
     response.end();
 }
 
+function stationVotes(query, response) {
+    
+    // The XBee's 64-bit serial number:
+    var stationID = query["s"];
+
+    var counts = [0, 0, 0];
+
+    // Find the current number of counts.
+    // Prepare a statement for this.
+    var stmt = db.prepare(
+        "SELECT button, SUM(count) AS total FROM votes WHERE station_id = ? GROUP BY button",
+        function(err) {
+            if (err) {
+                errorResponse(err, response);
+            }
+        });
+
+    // Process each row in the statement
+    stmt.each(stationID,
+        
+        function(err, row) { // row callback
+            if (err) {
+                errorResponse(err, response);
+            } else {
+                counts[row.button] = row.total;
+            }
+        },
+
+        function(err, rowcount) { // completion callback
+            if (err) {
+                errorResponse(err, response);
+            } else {
+                body = counts.join(":") + "\n";
+                response.writeHead(200, {
+                    "Content-Type": "text/plain",
+                    "Content-Length": body.length
+                });
+                response.write(body);
+                response.end();
+            }
+        }
+    );
+    stmt.finalize();
+
+}
+
 function vote(query, response) {
 
     console.log("Request handler: vote");
+    console.log(query);
 
     var rc;
     var body;
@@ -104,47 +151,19 @@ function vote(query, response) {
                 // Add to the current vote
                 console.log("Station " + stationID + ", button " + button + ", vote value: " + count);
                 var stmt = db.prepare("INSERT INTO votes (station_id, button, count) VALUES (?, ?, ?)");
-                stmt.run(stationID, button, count);
+                stmt.run(stationID, button, count, 
+                    function(err) { // statement callback
+                        if (err) {
+                            errorResponse(err, response);
+                        } else {
+                            stationVotes(query, response);
+                        }
+                    }
+                );
                 stmt.finalize();
 
             }
-
-            // Find the current number of counts.
-            // Prepare a statement for this.
-            var stmt = db.prepare(
-                "SELECT button, SUM(count) AS total FROM votes WHERE station_id = ? GROUP BY button",
-                function(err) {
-                    if (err) {
-                        errorResponse(err, response);
-                    }
-                });
-
-            // Process each row in the statement
-            stmt.each(stationID,
-                
-                function(err, row) { // row callback
-                    if (err) {
-                        errorResponse(err, response);
-                    } else {
-                        counts[row.button] = row.total;
-                    }
-                },
-
-                function(err, rowcount) { // completion callback
-                    if (err) {
-                        errorResponse(err, response);
-                    } else {
-                        body = counts.join(":") + "\n";
-                        response.writeHead(200, {
-                            "Content-Type": "text/plain",
-                            "Content-Length": body.length
-                        });
-                        response.write(body);
-                        response.end();
-                    }
-                }
-            );
-            stmt.finalize();
+            
 
         });
 
@@ -179,8 +198,7 @@ function fetch(query, response) {
                 } else {
                     if (!jsonresult[row.station_id]) {
                         jsonresult[row.station_id] = {};
-                        jsonresult[row.station_id][0] = 0;
-                        // FIXME replace this with a for loop that knows the # of buttons
+                        jsonresult[row.station_id][0] = 0; // FIXME replace this with a for loop that knows the # of buttons
                         jsonresult[row.station_id][1] = 0;
                         jsonresult[row.station_id][2] = 0;
                     }
@@ -211,3 +229,4 @@ exports.css = css;
 exports.dash = dash;
 exports.fetch = fetch;
 exports.vote = vote;
+exports.stationVotes = stationVotes;
