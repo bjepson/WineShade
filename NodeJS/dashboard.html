@@ -3,24 +3,52 @@
         <title>Data Crush Dashboard</title>
         <script src='http://code.jquery.com/jquery-latest.js'></script>
         <script>
+        
+        function refreshStations() {
+            
+            $.getJSON("http://localhost:8888/fetch",
+                function(data) {
+                    $('#stations').empty();
+                    $.each(data, function(station_id, station){
+                        $("<div/>").attr("id", station_id).appendTo("#stations");
+                        var station_sel = "#" + station_id;
+                        $("<h1>Station ID " + station_id + "</h1>").appendTo(station_sel);
+                        
+                        $.each(station, function(button_id, button) {
+                            $("<div>Button " + button_id + ": </div>").attr("id", button_id).appendTo(station_sel);
+                            var button_sel = station_sel + " > #" + button_id;
+                            $("<span>-</span>").attr("id", "minus").appendTo(button_sel).click(function() {
+                                $.get("http://localhost:8888/vote?s=" + station_id + "&b=" + button_id + "&c=-1");
+                                refreshStations();
+                            });
+                            $("<span>" + button + "</span>").attr("id", "val").appendTo(button_sel);
+                            $("<span>+</span>").attr("id", "plus").appendTo(button_sel).click(function() {
+                                $.get("http://localhost:8888/vote?s=" + station_id + "&b=" + button_id);
+                                refreshStations();
+                            });
+                            
+                            
+                        });
+                        
+                        
+                    });
+                });
+            
+            
+        }
         $(document).ready(function() {
+            refreshStations();
             var refreshId = setInterval(function()
             {
-                $('#100 > #0').load('http://localhost:8888/fetch?s=100&b=0');
-                $('#100 > #1').load('http://localhost:8888/fetch?s=100&b=1');
-                $('#100 > #2').load('http://localhost:8888/fetch?s=100&b=2');
-            }, 1000);
-        });
-        
-        </script>
+                refreshStations();
+          
+            }, 5000);
+          
+          });
+          </script>
         
     </head>
     <body>
-        <h1>Station ID 100</h1>
-        <div id='100'>
-            <span>A: </span><span id="minus">-</span><span id='0'></span><span id="plus">+</span>
-            <span>B: </span><span id="minus">-</span><span id='1'></span><span id="plus">+</span>
-            <span>C: </span><span id="minus">-</span><span id='2'></span><span id="plus">+</span>
-        </div>
+        <div id="stations"></div>
     </body>
 </html>

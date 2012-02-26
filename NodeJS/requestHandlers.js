@@ -113,7 +113,7 @@ function vote(query, response) {
       });
       
       query.each(stationID, 
-        function(err, row) { 
+        function(err, row) { // row callback
           if (err) {
             errorResponse(err, response);                      
           } else {
@@ -121,7 +121,7 @@ function vote(query, response) {
           }
         },
         
-        function(err, rowcount) {
+        function(err, rowcount) { // completion callback
           console.log(counts);
           if (err) {
             errorResponse(err, response);                      
@@ -148,48 +148,49 @@ function fetch(query, response) {
   
   console.log("Request handler: fetch");
 
-  var rc;
   var body;
   
-  var stationID = query["s"]; // The XBee's 64-bit serial number
-  var button    = query["b"]; // Number of the button that was pressed
-  
-  if (!stationID || !button) {
-    
-    errorResponse("s='" + stationID + "', b='" + button, response);
-    
-  } else {
-    
-    // Start serialized mode
-    db.serialize(function() {
-
-      // Find out the current number of counts.
-      var query = db.prepare("SELECT SUM(count) AS total FROM votes WHERE station_id = ? AND button = ?",
+  // Start serialized mode
+  db.serialize(function() {
+    // Find out the current number of counts.
+    var query = db.prepare("SELECT station_id, button, SUM(count) AS total FROM votes GROUP BY station_id, button",
         function(err) { 
-          if (err) {
-            errorResponse(err, response);          
-          }
-      });
-      
-      query.get(stationID, button, 
-        function(err, row) {
-          if (err) {
-            errorResponse(err, response);                      
-          } else {
-            body = row.total + "\n";
-            response.writeHead(200, {
-              "Content-Type":   "text/plain",
-              "Content-Length": body.length});
-              response.write(body);
-              response.end();
+            if (err) {
+                errorResponse(err, response);          
             }
+        }
+    );
+    
+    var jsonresult = {};
+    query.each( 
+      function(err, row) { // row callback
+        if (err) {
+          errorResponse(err, response);                      
+        } else {
+          if(!jsonresult[row.station_id]) { 
+              jsonresult[row.station_id] = {};
           }
-        );
-      query.finalize();
+          jsonresult[row.station_id][row.button] = row.total;
+        }
+      },
+      
+      function(err, rowcount) { // completion callback
+        if (err) {
+          errorResponse(err, response);                      
+        } else {
+          console.log(jsonresult);    
+          body = JSON.stringify(jsonresult) + "\n";
+          response.writeHead(200, {
+            "Content-Type":   "text/plain",
+            "Content-Length": body.length});
+            response.write(body);
+            response.end();
+        }
+     });
+     
+     query.finalize();
 
-    });
-  
-  }
+  });
   
 }
 
