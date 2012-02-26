@@ -1,0 +1,4 @@
+Requirements:
+
+  Minimal.js: https://github.com/ruidlopes/minimal.js
+  node-sqlite: https://github.com/developmentseed/node-sqlite3
