@@ -7,7 +7,7 @@
         
         function refreshStations() {
             
-            $.getJSON("http://localhost:8888/fetch",
+            $.getJSON("/fetch",
                 function(data) {
                     
                     $('#stations').empty();
@@ -23,14 +23,14 @@
                             var button_sel = station_sel.children("#" + button_id);
                             
                             $("<span>-</span>").attr("id", "minus").attr("class", "btn").appendTo(button_sel).click(function() {
-                                $.get("http://localhost:8888/vote?s=" + station_id + "&b=" + button_id + "&c=-1");
+                                $.get("/vote?s=" + station_id + "&b=" + button_id + "&c=-1");
                                 refreshStations(); // FIXME: just refresh the one button
                             });
                             
                             $("<span>" + button + "</span>").attr("id", "val").attr("class", "btnval").appendTo(button_sel);
                             
                             $("<span>+</span>").attr("id", "plus").attr("class", "btn").appendTo(button_sel).click(function() {
-                                $.get("http://localhost:8888/vote?s=" + station_id + "&b=" + button_id);
+                                $.get("/vote?s=" + station_id + "&b=" + button_id);
                                 refreshStations(); // FIXME: just refresh the one button
                             });
                             

@@ -106,7 +106,7 @@ function vote(query, response) {
         
       } else {
 
-        // Increment the count of the current vote
+        // Add to the current vote
         console.log("Station " + stationID + ", button " + button + ", vote value: " + count);
         var stmt = db.prepare("INSERT INTO votes (station_id, button, count) VALUES (?, ?, ?)");
         stmt.run(stationID, button, count);
@@ -114,15 +114,17 @@ function vote(query, response) {
         
       }
       
-      // Find out the current number of counts.
-      var query = db.prepare("SELECT button, SUM(count) AS total FROM votes WHERE station_id = ? GROUP BY button",
+      // Find the current number of counts.
+      // Prepare a statement for this.
+      var stmt = db.prepare("SELECT button, SUM(count) AS total FROM votes WHERE station_id = ? GROUP BY button",
         function(err) { 
           if (err) {
             errorResponse(err, response);          
           }
       });
       
-      query.each(stationID, 
+      // Process each row in the statement
+      stmt.each(stationID, 
         function(err, row) { // row callback
           if (err) {
             errorResponse(err, response);                      
@@ -145,7 +147,7 @@ function vote(query, response) {
             }
           }
         );
-      query.finalize();
+      stmt.finalize();
 
     });
   
