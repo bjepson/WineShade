@@ -38,31 +38,45 @@ CREATE VIEW IF NOT EXISTS stations AS
 
 And this should generate Coco's report:
 
-SELECT run_id, station_id, start, end,
-    (SELECT SUM(count) 
+.headers ON
+.separator ,
+SELECT run_id, station_id,
+    COALESCE((SELECT SUM(count)
         FROM votes 
         WHERE votes.station_id = stations.station_id 
         AND button = 0 AND NOT artificial 
         AND votes.timestamp < run_spans.end 
-        AND votes.timestamp >= run_spans.start),
-    (SELECT SUM(count) 
+        AND votes.timestamp >= run_spans.start), 0) AS btn0,
+    COALESCE((SELECT SUM(count) 
         FROM votes 
         WHERE votes.station_id = stations.station_id 
         AND button = 1 AND NOT artificial
         AND votes.timestamp < run_spans.end 
-        AND votes.timestamp >= run_spans.start),
-    (SELECT SUM(count) 
+        AND votes.timestamp >= run_spans.start), 0) AS btn1,
+    COALESCE((SELECT SUM(count) 
         FROM votes 
         WHERE votes.station_id = stations.station_id 
         AND button = 2 AND NOT artificial
         AND votes.timestamp < run_spans.end 
-        AND votes.timestamp >= run_spans.start),
-    (SELECT SUM(count) 
+        AND votes.timestamp >= run_spans.start), 0) AS btn2,
+    COALESCE((SELECT SUM(count) 
         FROM votes 
         WHERE votes.station_id = stations.station_id 
         AND button = 0 AND artificial 
         AND votes.timestamp < run_spans.end 
-        AND votes.timestamp >= run_spans.start)
+        AND votes.timestamp >= run_spans.start), 0) AS artificial0,
+    COALESCE((SELECT SUM(count) 
+        FROM votes 
+        WHERE votes.station_id = stations.station_id 
+        AND button = 1 AND artificial 
+        AND votes.timestamp < run_spans.end 
+        AND votes.timestamp >= run_spans.start), 0) AS artificial1,
+    COALESCE((SELECT SUM(count) 
+        FROM votes 
+        WHERE votes.station_id = stations.station_id 
+        AND button = 2 AND artificial 
+        AND votes.timestamp < run_spans.end 
+        AND votes.timestamp >= run_spans.start), 0) AS artificial2
     FROM stations, run_spans
-    ORDER BY run_id, station_id
+    ORDER BY run_id, station_id;
 
