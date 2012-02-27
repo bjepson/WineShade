@@ -1,14 +1,15 @@
 
-* Create a way to give meaningful names to stations
 * Create data exports
-* Flag artificial votes with a new column
+* Download latest jquery
 * Button to start new run.
+* Antennas up!!!!
+
+* Mobile interface
+* Add busy indicator while processing + and -
+
+* Create a way to give meaningful names to stations
 * Animate updates on the dashboard
 * Figure out the one with a bad RTC
-* Antennas up!!!!
-* Mobile interface
-
-* Add busy indicator while processing + and -
 * Fritzing diagrams for stations
 
 Generating a list of run start and end times:
@@ -23,7 +24,6 @@ CREATE VIEW IF NOT EXISTS run_spans AS
     UNION 
     SELECT 0 AS run_id, '1970-1-1' AS start, MIN(timestamp) AS end
       FROM runs;
-    
 
 These have overlap though, so:
 

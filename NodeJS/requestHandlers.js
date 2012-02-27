@@ -54,7 +54,7 @@ function showFile(query, response, filePath, fileType) {
 }
 
 function jquery(query, response) {
-    var filePath = "jquery-1.6.2.min.js";
+    var filePath = "jquery-1.7.1.min.js";
     showFile(query, response, filePath, "application/javascript");
 }
 
