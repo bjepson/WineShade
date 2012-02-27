@@ -4,29 +4,41 @@ var path = require('path');
 var db = new sqlite3.Database('datacrush.db');
 
 db.serialize(function() {
-    db.run("CREATE TABLE IF NOT EXISTS " +
-    "votes(station_id, button INTEGER, count INTEGER, " +
-    "      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)");
     
+    // All the votes
+    db.run("CREATE TABLE IF NOT EXISTS " +
+    "         votes(station_id, button INTEGER, count INTEGER, artificial INTEGER, " +
+    "               timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)");
     db.run("CREATE INDEX IF NOT EXISTS station_ix ON votes (station_id)");
     db.run("CREATE INDEX IF NOT EXISTS button_ix  ON votes (button)");
+
+    // Table of experiment runs. Add a row to this table to kick off a new run
+    db.run("CREATE TABLE IF NOT EXISTS " +
+    "         runs(run_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+    "              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)");
+    db.run("CREATE INDEX IF NOT EXISTS timestamp_ix ON runs (timestamp)");
+    
+    // View that shows us only the votes from the current run
+    db.run("CREATE VIEW IF NOT EXISTS current_run AS " +
+    "         SELECT * FROM votes " +
+    "         WHERE timestamp >= coalesce( (SELECT MAX(timestamp) FROM runs), '1970-1-1')");
+    
 });
 
 function showFile(query, response, filePath, fileType) {
 
-    path.exists(filePath,
-    function(exists) {
+    path.exists(filePath, function(exists) {
 
         if (exists) {
-            fs.readFile(filePath,
-            function(error, content) {
+            fs.readFile(filePath, function(error, content) {
                 if (error) {
                     response.writeHead(500);
                     response.end();
                 }
                 else {
                     response.writeHead(200, {
-                        'Content-Type': fileType
+                        'Content-Type': fileType,
+                        'Content-Length': content.length
                     });
                     response.end(content, 'utf-8');
                 }
@@ -39,6 +51,11 @@ function showFile(query, response, filePath, fileType) {
     });
 
 
+}
+
+function jquery(query, response) {
+    var filePath = "jquery-1.6.2.min.js";
+    showFile(query, response, filePath, "application/javascript");
 }
 
 function dash(query, response) {
@@ -69,42 +86,47 @@ function stationVotes(query, response) {
 
     var counts = [0, 0, 0];
 
-    // Find the current number of counts.
-    // Prepare a statement for this.
-    var stmt = db.prepare(
-        "SELECT button, SUM(count) AS total FROM votes WHERE station_id = ? GROUP BY button",
-        function(err) {
-            if (err) {
-                errorResponse(err, response);
-            }
-        });
+    // Start serialized mode
+    db.serialize(function() {
 
-    // Process each row in the statement
-    stmt.each(stationID,
+        // Find the current number of counts.
+        // Prepare a statement for this.
+        var stmt = db.prepare(
+            "SELECT button, SUM(count) AS total FROM current_run WHERE station_id = ? GROUP BY button",
+            function(err) {
+                if (err) {
+                    errorResponse(err, response);
+                }
+            }
+        );
+
+        // Process each row in the statement
+        stmt.each(stationID,
         
-        function(err, row) { // row callback
-            if (err) {
-                errorResponse(err, response);
-            } else {
-                counts[row.button] = row.total;
-            }
-        },
+            function(err, row) { // row callback
+                if (err) {
+                    errorResponse(err, response);
+                } else {
+                    counts[row.button] = row.total;
+                }
+            },
 
-        function(err, rowcount) { // completion callback
-            if (err) {
-                errorResponse(err, response);
-            } else {
-                body = counts.join(":") + "\n";
-                response.writeHead(200, {
-                    "Content-Type": "text/plain",
-                    "Content-Length": body.length
-                });
-                response.write(body);
-                response.end();
+            function(err, rowcount) { // completion callback
+                if (err) {
+                    errorResponse(err, response);
+                } else {
+                    body = counts.join(":") + "\n";
+                    response.writeHead(200, {
+                        "Content-Type": "text/plain",
+                        "Content-Length": body.length
+                    });
+                    response.write(body);
+                    response.end();
+                }
             }
-        }
-    );
-    stmt.finalize();
+        );
+        stmt.finalize();
+    });
 
 }
 
@@ -124,6 +146,12 @@ function vote(query, response) {
 
     // Number of votes (negative OK)
     var count = query["c"];
+
+    // Is this artificial? (blank OK)
+    var artificial = query["a"];
+    if (!artificial) {
+        artificial = 0;
+    }
 
     if (!count) { // default if not specified
         count = 1;
@@ -150,8 +178,8 @@ function vote(query, response) {
 
                 // Add to the current vote
                 console.log("Station " + stationID + ", button " + button + ", vote value: " + count);
-                var stmt = db.prepare("INSERT INTO votes (station_id, button, count) VALUES (?, ?, ?)");
-                stmt.run(stationID, button, count, 
+                var stmt = db.prepare("INSERT INTO votes (station_id, button, count, artificial) VALUES (?, ?, ?, ?)");
+                stmt.run(stationID, button, count, artificial,
                     function(err) { // statement callback
                         if (err) {
                             errorResponse(err, response);
@@ -182,7 +210,7 @@ function fetch(query, response) {
     db.serialize(function() {
         
         var stmt = db.prepare( // Fetch the tallies of votes.
-            "SELECT station_id, button, SUM(count) AS total FROM votes GROUP BY station_id, button",
+            "SELECT station_id, button, SUM(count) AS total FROM current_run GROUP BY station_id, button",
             function(err) {
                 if (err) {
                     errorResponse(err, response);
@@ -225,6 +253,7 @@ function fetch(query, response) {
 
 }
 
+exports.jquery = jquery;
 exports.css = css;
 exports.dash = dash;
 exports.fetch = fetch;

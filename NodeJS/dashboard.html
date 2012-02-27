@@ -2,13 +2,19 @@
     <head>
         <title>Data Crush Dashboard</title>
         <link rel="stylesheet" href="style.css" type="text/css" />
-        <script src='http://code.jquery.com/jquery-latest.js'></script>
+        <script src='jquery.js'></script>
         <script>
         
         function refreshStations() {
             
             $.getJSON("/fetch",
                 function(data) {
+                    
+                    $.each( $("#stations").children(), function (key, val) {
+                        if (!data[val.id]) {
+                            $("#" + val.id).remove();
+                        }
+                    });
                     
                     //$('#stations').empty();
                     $.each(data, function(station_id, station){
@@ -19,7 +25,7 @@
                             $("<h1/>").appendTo($(station_sel));
                         }
                         $(station_sel + " h1").text("Station ID " + station_id);
-                        
+                                                
                         $.each(station, function(button_no, count) {
                             
                             button_id = station_id + "_" + button_no;
@@ -32,7 +38,7 @@
                                 
                                 // Add the minus (decrement) button
                                 $("<span>-</span>").attr("class", "btn").appendTo($(button_sel)).click(function() {
-                                    $.get("/vote?s=" + station_id + "&b=" + button_no + "&c=-1");
+                                    $.get("/vote?a=1&s=" + station_id + "&b=" + button_no + "&c=-1");
                                     refreshStations();
                                 });
                                 
@@ -41,7 +47,7 @@
                                 
                                 // Add the plus (increment) button
                                 $("<span>+</span>").attr("class", "btn").appendTo($(button_sel)).click(function() {
-                                    $.get("/vote?s=" + station_id + "&b=" + button_no);
+                                    $.get("/vote?a=1&s=" + station_id + "&b=" + button_no);
                                     refreshStations();
                                 });
                             }
