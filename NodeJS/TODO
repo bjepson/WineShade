@@ -1,7 +1,11 @@
 
 * Create a way to give meaningful names to stations
 * Create data exports
+* Flag artificial votes with a new column
+* Button to start new run.
+* Animate updates on the dashboard
+* Figure out the one with a bad RTC
+* Antennas up!!!!
+
 * Add busy indicator while processing + and -
 * Fritzing diagrams for stations
-* Break out artificial votes into a separate table
-* Button to start new run.

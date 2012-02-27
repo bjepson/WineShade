@@ -136,11 +136,13 @@ boolean panic() {
     digitalWrite(leds[0], LOW);
     digitalWrite(leds[1], LOW);
     digitalWrite(leds[2], LOW);
+    digitalWrite(13, LOW);
 
     delay(250);
     digitalWrite(leds[0], HIGH);
     digitalWrite(leds[1], HIGH);
     digitalWrite(leds[2], HIGH);
+    digitalWrite(13, HIGH);
     delay(250);
   }
 }
@@ -209,7 +211,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Booted. Waiting for XBee to warm up."); // FIXME: check XBee to see if it's associated instead of twiddling yer thumbs
   Serial1.begin(115200); // The XBee
-  delay(10000);
+  delay(5000);
 
   if (!configureRadio()) {
     panic();
@@ -239,6 +241,9 @@ void setup() {
   bargraphs[2]->setStartPin(26);
 
   recalculatePercentages();
+
+  pinMode(13,    OUTPUT);
+  digitalWrite(13, HIGH);
 
 }
 
@@ -272,8 +277,10 @@ void loop()
       // Blink the button the user just pressed.
       vote(i); // Transmit the vote to the server
       for (int j = 0; j < 3; j++) {
+        digitalWrite(13, HIGH);
         digitalWrite(leds[i], HIGH);
         delay(blinkDelay);
+        digitalWrite(13, LOW);
         digitalWrite(leds[i], LOW);
         delay(blinkDelay);
       }
@@ -295,6 +302,9 @@ void loop()
   }
 
 }
+
+
+
 
 
 
