@@ -173,6 +173,7 @@ function vote(query, response) {
                 console.log("Warning: button #" + button + 
                             " is higher than last array element " + 
                             (counts.length - 1));
+                stationVotes(query, response);
 
             } else {
 
