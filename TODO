@@ -10,3 +10,59 @@
 
 * Add busy indicator while processing + and -
 * Fritzing diagrams for stations
+
+Generating a list of run start and end times:
+
+CREATE VIEW IF NOT EXISTS run_spans AS 
+  SELECT start.run_id AS run_id, MAX(start.timestamp) AS start, MIN(end.timestamp) AS end
+    FROM runs start, runs end 
+    WHERE start.timestamp < end.timestamp GROUP BY start.run_id
+    UNION
+    SELECT MAX(run_id) AS run_id, MAX(timestamp) AS start, '9999-12-31' AS end
+      FROM runs
+    UNION 
+    SELECT 0 AS run_id, '1970-1-1' AS start, MIN(timestamp) AS end
+      FROM runs;
+    
+
+These have overlap though, so:
+
+SELECT run_id, votes.*
+  FROM run_spans, votes
+  WHERE votes.timestamp < run_spans.end AND votes.timestamp >= run_spans.start;
+
+Need a unique list of stations:
+
+CREATE VIEW IF NOT EXISTS stations AS
+  SELECT station_id FROM votes GROUP BY station_id;
+
+And this should generate Coco's report:
+
+SELECT run_id, station_id, start, end,
+    (SELECT SUM(count) 
+        FROM votes 
+        WHERE votes.station_id = stations.station_id 
+        AND button = 0 AND NOT artificial 
+        AND votes.timestamp < run_spans.end 
+        AND votes.timestamp >= run_spans.start),
+    (SELECT SUM(count) 
+        FROM votes 
+        WHERE votes.station_id = stations.station_id 
+        AND button = 1 AND NOT artificial
+        AND votes.timestamp < run_spans.end 
+        AND votes.timestamp >= run_spans.start),
+    (SELECT SUM(count) 
+        FROM votes 
+        WHERE votes.station_id = stations.station_id 
+        AND button = 2 AND NOT artificial
+        AND votes.timestamp < run_spans.end 
+        AND votes.timestamp >= run_spans.start),
+    (SELECT SUM(count) 
+        FROM votes 
+        WHERE votes.station_id = stations.station_id 
+        AND button = 0 AND artificial 
+        AND votes.timestamp < run_spans.end 
+        AND votes.timestamp >= run_spans.start)
+    FROM stations, run_spans
+    ORDER BY run_id, station_id
+
