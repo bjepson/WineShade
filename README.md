@@ -4,7 +4,7 @@ ConnectPort X2 Configuration:
     
 XBee Radio Configuration:
     ZIGBEE ROUTER AT
-    PAN ID: AAAA
+    PAN (ID): AAAA
     DH: 0000
     DL: 0000
     JV: 1

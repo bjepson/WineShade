@@ -19,6 +19,7 @@ db.serialize(function() {
     "         runs(run_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
     "              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)");
     db.run("CREATE INDEX IF NOT EXISTS timestamp_ix ON runs (timestamp)");
+    db.run("INSERT INTO RUNS (run_id) VALUES(null)");
     
     // View that shows us only the votes from the current run
     db.run("CREATE VIEW IF NOT EXISTS current_run AS " +

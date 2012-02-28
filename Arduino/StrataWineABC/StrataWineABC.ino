@@ -87,7 +87,7 @@ void vote(int button) {
   Serial1.println("http://192.168.2.1:8888/vote?s=" + my_name + "&b=" + button); 
   delay(250);
   if (!getVotes()) {
-    panic(); // FIXME: recover by sending abort and trying again
+    panic("Could not register vote"); // FIXME: recover by sending abort and trying again
   }
 
 }
@@ -104,7 +104,6 @@ boolean getVotes() {
   while (!finished && Serial1.available() > 0) { // FIXME: does this need a timeout?
 
     char ch = Serial1.read(); 
-    Serial.print(ch);
     if(ch >= '0' && ch <= '9') {
       counts[curr_button] = (counts[curr_button]  * 10) + (ch - '0');
     } 
@@ -129,9 +128,9 @@ boolean getVotes() {
   }
 }
 
-boolean panic() {
+boolean panic(String s) {
 
-  Serial.println("Sorry boss. Couldn't recover from this one.");
+  Serial.println(s);
   while (1) {
     digitalWrite(leds[0], LOW);
     digitalWrite(leds[1], LOW);
@@ -201,28 +200,31 @@ boolean configureRadio() {
 
 void setup() {
 
+  for (int i = 0; i < numButtons; i++) {
+    pinMode(buttons[i], INPUT);
+
+    pinMode(leds[i],    OUTPUT); // Enable the LED for output
+  }
+  
   Serial.begin(9600);
   Serial.println("Booted. Waiting for XBee to warm up."); // FIXME: check XBee to see if it's associated instead of twiddling yer thumbs
-  Serial1.begin(115200); // The XBee
+  Serial1.begin(9600); // The XBee
   delay(5000);
 
   if (!configureRadio()) {
-    panic();
+    panic("Could not configure radio");
   }
 
   flushMe();
   Serial1.println("http://192.168.2.1:8888/stationVotes?s=" + my_name); 
   delay(250);
   if (!getVotes()) {
-    panic(); // FIXME: recover by sending abort and trying again
+    panic("Could not retrieve votes"); // FIXME: recover by sending abort and trying again
   }
 
   for (int i = 0; i < numButtons; i++) {
 
-    pinMode(buttons[i], INPUT);
     digitalWrite(buttons[i],HIGH);  // turn on internal pull-up on the inputPin
-
-    pinMode(leds[i],    OUTPUT); // Enable the LED for output
     digitalWrite(leds[i], HIGH); // light it
 
     bargraphs[i] = new BarGraph(); // Create and initialize each BarGraph
@@ -233,6 +235,7 @@ void setup() {
   bargraphs[1]->setStartPin(33);
   bargraphs[2]->setStartPin(26);
 
+  log();
   recalculatePercentages();
 
   pinMode(13,    OUTPUT);
@@ -244,10 +247,15 @@ void recalculatePercentages() {
 
   // Recalculate all percentages
   for (int j = 0; j < numButtons; j++) {
-    // Recalculate the bargraph value     
-    int percent = counts[j] * 100 / total;
-    int scaled = percent == 0 ? 0: map(percent, 1, 100, 1, 12);
-    bargraphs[j]->setValue(scaled);
+    // Recalculate the bargraph value
+    if (counts[j] == 0) {
+      bargraphs[j]->setValue(0);
+    } 
+    else {
+      int percent = counts[j] * 100 / total;
+      int scaled = percent == 0 ? 0: map(percent, 1, 100, 1, 12);
+      bargraphs[j]->setValue(scaled);
+    }
   }
 
 }
@@ -295,6 +303,7 @@ void loop()
   }
 
 }
+
 
 
 
