@@ -1,6 +1,8 @@
 var sqlite3 = require('sqlite3').verbose();
 var fs = require('fs');
 var path = require('path');
+var exec = require("child_process").exec;
+
 var db = new sqlite3.Database('datacrush.db');
 
 db.serialize(function() {
@@ -24,6 +26,21 @@ db.serialize(function() {
     "         WHERE timestamp >= coalesce( (SELECT MAX(timestamp) FROM runs), '1970-1-1')");
     
 });
+
+function dumpData(query, response) {
+  var content = "no result";
+
+  exec("sh dumpData.sh", function (error, stdout, stderr) {
+    content = stdout;
+    response.writeHead(200, {
+        'Content-Type': "text/csv",
+        'Content-Length': content.length,
+        'Content-Disposition': 'attachment; filename=DataCrush.csv'
+    });
+    response.end(content, 'utf-8');
+    
+  });
+}
 
 function showFile(query, response, filePath, fileType) {
 
@@ -77,6 +94,20 @@ function errorResponse(err, response) {
     });
     response.write(body);
     response.end();
+}
+
+
+function newRun(query, response) {
+    
+    // Start serialized mode
+    db.serialize(function() {
+
+        db.run("INSERT INTO runs (run_id) VALUES (NULL)", function(err) {
+            if (err) {
+                errorResponse(err, response);
+            }
+        });
+    });  
 }
 
 function stationVotes(query, response) {
@@ -209,9 +240,17 @@ function fetch(query, response) {
 
     // Start serialized mode
     db.serialize(function() {
-        
-        var stmt = db.prepare( // Fetch the tallies of votes.
-            "SELECT station_id, button, SUM(count) AS total FROM current_run GROUP BY station_id, button",
+        var stmt = db.prepare( 
+            /* Fetch the tallies of votes from the current run, but for convenience,
+               pull in rows (with zero votes) from previous runs so they appear in 
+               the dashboard.
+             */
+            "SELECT station_id, button, SUM(count) AS total " +
+            "  FROM current_run GROUP BY station_id, button " +
+            "UNION SELECT station_id, button, 0 AS total " +
+            "        FROM votes WHERE station_id NOT IN " +
+            "        (SELECT station_id FROM current_run " +
+            "           WHERE button=votes.button) GROUP BY station_id, button",
             function(err) {
                 if (err) {
                     errorResponse(err, response);
@@ -260,3 +299,5 @@ exports.dash = dash;
 exports.fetch = fetch;
 exports.vote = vote;
 exports.stationVotes = stationVotes;
+exports.newRun = newRun;
+exports.dumpData = dumpData;

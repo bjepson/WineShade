@@ -8,6 +8,8 @@ handle["/vote"] = requestHandlers.vote;
 handle["/fetch"] = requestHandlers.fetch;
 handle["/dash"] = requestHandlers.dash;
 handle["/stationVotes"] = requestHandlers.stationVotes;
+handle["/newRun"] = requestHandlers.newRun;
+handle["/dumpData"] = requestHandlers.dumpData;
 handle["/style.css"] = requestHandlers.css;
 handle["/jquery.js"] = requestHandlers.jquery;
 

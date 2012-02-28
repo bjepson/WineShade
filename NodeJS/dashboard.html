@@ -5,6 +5,16 @@
         <script src='jquery.js'></script>
         <script>
         
+        $(document).ready( function(){
+            
+            $("#startNewRun").click(function() {
+                $.getJSON("/newRun", function(data) {
+                        // FIXME: check return value here
+                        refreshStations();
+                });
+            });
+        });    
+        
         function refreshStations() {
             
             $.getJSON("/fetch",
@@ -22,9 +32,9 @@
                         var station_sel = "#" + station_id;
                         if ($(station_sel).length == 0) {
                             $("<div/>").attr("id", station_id).appendTo("#stations");
-                            $("<h1/>").appendTo($(station_sel));
+                            $("<h2/>").appendTo($(station_sel));
                         }
-                        $(station_sel + " h1").text("Station ID " + station_id);
+                        $(station_sel + " h2").text("Station ID " + station_id);
                                                 
                         $.each(station, function(button_no, count) {
                             
@@ -72,6 +82,9 @@
           </script>
         
     </head>
+    <h1>Data Crush Dashboard</h1>
+    <span id="startNewRun" class="btn">Initiate new run</span>
+    <a id="dumpData" class="btn" href="/dumpData">Download Data</a>
     <body>
         <div id="stations"></div>
     </body>

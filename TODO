@@ -1,14 +1,14 @@
 
 * Create data exports
-* Download latest jquery
-* Button to start new run.
 * Antennas up!!!!
+* error check in refreshStations
+* error check in startNewRun
+* How to tell the stations that we kicked off a new run?!
 
 * Mobile interface
-* Add busy indicator while processing + and -
 
-* Create a way to give meaningful names to stations
-* Animate updates on the dashboard
+* Create a way to give meaningful names to stations?
+* Animate updates/busy indicator on the dashboard
 * Figure out the one with a bad RTC
 * Fritzing diagrams for stations
 
@@ -41,42 +41,63 @@ And this should generate Coco's report:
 .headers ON
 .separator ,
 SELECT run_id, station_id,
-    COALESCE((SELECT SUM(count)
-        FROM votes 
-        WHERE votes.station_id = stations.station_id 
-        AND button = 0 AND NOT artificial 
-        AND votes.timestamp < run_spans.end 
-        AND votes.timestamp >= run_spans.start), 0) AS btn0,
-    COALESCE((SELECT SUM(count) 
-        FROM votes 
-        WHERE votes.station_id = stations.station_id 
-        AND button = 1 AND NOT artificial
-        AND votes.timestamp < run_spans.end 
-        AND votes.timestamp >= run_spans.start), 0) AS btn1,
-    COALESCE((SELECT SUM(count) 
-        FROM votes 
-        WHERE votes.station_id = stations.station_id 
-        AND button = 2 AND NOT artificial
-        AND votes.timestamp < run_spans.end 
-        AND votes.timestamp >= run_spans.start), 0) AS btn2,
-    COALESCE((SELECT SUM(count) 
-        FROM votes 
-        WHERE votes.station_id = stations.station_id 
-        AND button = 0 AND artificial 
-        AND votes.timestamp < run_spans.end 
-        AND votes.timestamp >= run_spans.start), 0) AS artificial0,
-    COALESCE((SELECT SUM(count) 
-        FROM votes 
-        WHERE votes.station_id = stations.station_id 
-        AND button = 1 AND artificial 
-        AND votes.timestamp < run_spans.end 
-        AND votes.timestamp >= run_spans.start), 0) AS artificial1,
-    COALESCE((SELECT SUM(count) 
-        FROM votes 
-        WHERE votes.station_id = stations.station_id 
-        AND button = 2 AND artificial 
-        AND votes.timestamp < run_spans.end 
-        AND votes.timestamp >= run_spans.start), 0) AS artificial2
-    FROM stations, run_spans
+       COALESCE(SUM(CASE WHEN button = 0 AND NOT artificial THEN count END), 0) AS btn0,
+       COALESCE(SUM(CASE WHEN button = 1 AND NOT artificial THEN count END), 0) AS btn1,
+       COALESCE(SUM(CASE WHEN button = 2 AND NOT artificial THEN count END), 0) AS btn2,
+       COALESCE(SUM(CASE WHEN button = 0 AND artificial THEN count END), 0) AS artificial0,
+       COALESCE(SUM(CASE WHEN button = 1 AND artificial THEN count END), 0) AS artificial1,
+       COALESCE(SUM(CASE WHEN button = 2 AND artificial THEN count END), 0) AS artificial2
+    FROM run_spans, votes
+    WHERE votes.timestamp < run_spans.end 
+    AND votes.timestamp >= run_spans.start
+    GROUP BY run_id, station_id
     ORDER BY run_id, station_id;
+
+
+
+
+    Verbose way of generating the report:
+
+    .headers ON
+    .separator ,
+    SELECT run_id, station_id,
+       COALESCE((SELECT SUM(count)
+           FROM votes 
+           WHERE votes.station_id = stations.station_id 
+           AND button = 0 AND NOT artificial 
+           AND votes.timestamp < run_spans.end 
+           AND votes.timestamp >= run_spans.start), 0) AS btn0,
+       COALESCE((SELECT SUM(count) 
+           FROM votes 
+           WHERE votes.station_id = stations.station_id 
+           AND button = 1 AND NOT artificial
+           AND votes.timestamp < run_spans.end 
+           AND votes.timestamp >= run_spans.start), 0) AS btn1,
+       COALESCE((SELECT SUM(count) 
+           FROM votes 
+           WHERE votes.station_id = stations.station_id 
+           AND button = 2 AND NOT artificial
+           AND votes.timestamp < run_spans.end 
+           AND votes.timestamp >= run_spans.start), 0) AS btn2,
+       COALESCE((SELECT SUM(count) 
+           FROM votes 
+           WHERE votes.station_id = stations.station_id 
+           AND button = 0 AND artificial 
+           AND votes.timestamp < run_spans.end 
+           AND votes.timestamp >= run_spans.start), 0) AS artificial0,
+       COALESCE((SELECT SUM(count) 
+           FROM votes 
+           WHERE votes.station_id = stations.station_id 
+           AND button = 1 AND artificial 
+           AND votes.timestamp < run_spans.end 
+           AND votes.timestamp >= run_spans.start), 0) AS artificial1,
+       COALESCE((SELECT SUM(count) 
+           FROM votes 
+           WHERE votes.station_id = stations.station_id 
+           AND button = 2 AND artificial 
+           AND votes.timestamp < run_spans.end 
+           AND votes.timestamp >= run_spans.start), 0) AS artificial2
+       FROM stations, run_spans
+        ORDER BY run_id, station_id;
+
 
