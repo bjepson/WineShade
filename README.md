@@ -10,4 +10,4 @@ XBee Radio Configuration:
     JV: 1
     NI: Unique ID, no spaces, alphanumeric only
     
-https://github.com/bjepson/StrataWineABC/raw/master/station.jpg
+![](https://github.com/bjepson/StrataWineABC/raw/master/station.jpg)
