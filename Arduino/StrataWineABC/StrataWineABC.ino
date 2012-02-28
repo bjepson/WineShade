@@ -15,7 +15,7 @@ BarGraph *bargraphs[3];
 
 int total = 0;
 
-String my_address = "UNDEFINED";
+String my_name = "UNDEFINED";
 
 boolean debounce(int pin)
 {
@@ -84,7 +84,7 @@ void flushMe() {
 void vote(int button) {
 
   flushMe();
-  Serial1.println("http://192.168.2.1:8888/vote?s=" + my_address + "&b=" + button); 
+  Serial1.println("http://192.168.2.1:8888/vote?s=" + my_name + "&b=" + button); 
   delay(250);
   if (!getVotes()) {
     panic(); // FIXME: recover by sending abort and trying again
@@ -156,7 +156,7 @@ boolean configureRadio() {
   delay(100);
 
   String ok_response = "OK\r"; // the response we expect.
-  my_address = "";
+  my_name = "";
 
   // Read the text of the response into the response variable
   String response = String("");
@@ -168,26 +168,19 @@ boolean configureRadio() {
 
   // If we got the right response, configure the radio and return true. 
   if (response.equals(ok_response)) {
-    Serial.println("Requesting high portion of XBee address");
-    Serial1.print("ATSH\r"); // Get high portion of address
+    Serial.println("Requesting XBee device name");
+    Serial1.print("ATNI\r"); // Get name
     delay(100);
     while (Serial1.available() > 0) {
       char c = (char) Serial1.read(); 
-      if ( (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')) {
-        my_address += c;
+      if ( (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || c == '_') {
+        my_name += c;
       }
     }
-
-    Serial.println("Requesting low portion of XBee address");
-    Serial1.print("ATSL\r"); // Get low portion of address
-    delay(100);
-    while (Serial1.available() > 0) {
-      char c = (char) Serial1.read(); 
-      if ( (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9')) {
-        my_address += c;
-      }
+    if (my_name == "") {
+      my_name = "UNDEFINED_SET_ME_WITH_ATNI";
     }
-    Serial.println("My address: [" + my_address + "]");
+    Serial.println("My address: [" + my_name + "]");
 
 
     Serial1.print("ATCN\r"); // back to data mode
@@ -218,7 +211,7 @@ void setup() {
   }
 
   flushMe();
-  Serial1.println("http://192.168.2.1:8888/stationVotes?s=" + my_address); 
+  Serial1.println("http://192.168.2.1:8888/stationVotes?s=" + my_name); 
   delay(250);
   if (!getVotes()) {
     panic(); // FIXME: recover by sending abort and trying again
