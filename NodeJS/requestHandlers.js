@@ -19,7 +19,15 @@ db.serialize(function() {
     "         runs(run_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
     "              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)");
     db.run("CREATE INDEX IF NOT EXISTS timestamp_ix ON runs (timestamp)");
-    db.run("INSERT INTO RUNS (run_id) VALUES(null)");
+    db.run("INSERT INTO RUNS (run_id, timestamp) " +
+    "         SELECT null, CURRENT_TIMESTAMP " +
+    "            WHERE NOT EXISTS (SELECT * FROM runs) " +
+    "            AND   NOT EXISTS (SELECT * FROM votes) " +
+    "        UNION ALL " +
+    "         SELECT null, MIN(timestamp) FROM votes " +
+    "            WHERE NOT EXISTS (SELECT * FROM runs) " +
+    "            AND   EXISTS (SELECT * FROM votes) " +
+    "            GROUP BY 1");
     
     // View that shows us only the votes from the current run
     db.run("CREATE VIEW IF NOT EXISTS current_run AS " +
@@ -164,9 +172,6 @@ function stationVotes(query, response) {
 
 function vote(query, response) {
 
-    console.log("Request handler: vote");
-    console.log(query);
-
     var rc;
     var body;
 
@@ -178,6 +183,7 @@ function vote(query, response) {
 
     // Number of votes (negative OK)
     var count = query["c"];
+    
 
     // Is this artificial? (blank OK)
     var artificial = query["a"];
@@ -188,6 +194,7 @@ function vote(query, response) {
     if (!count) { // default if not specified
         count = 1;
     }
+    console.log("Station " + stationID + " cast " + count + " vote(s) for " + button);
 
     if (!stationID || !button) {
 
@@ -199,7 +206,6 @@ function vote(query, response) {
         db.serialize(function() {
 
             var counts = [0, 0, 0];
-            console.log(button);
             if (button > counts.length - 1 || button.length > 1) {
 
                 console.log("Warning: button #" + button + 
@@ -210,7 +216,6 @@ function vote(query, response) {
             } else {
 
                 // Add to the current vote
-                console.log("Station " + stationID + ", button " + button + ", vote value: " + count);
                 var stmt = db.prepare("INSERT INTO votes (station_id, button, count, artificial) VALUES (?, ?, ?, ?)");
                 stmt.run(stationID, button, count, artificial,
                     function(err) { // statement callback
@@ -234,8 +239,6 @@ function vote(query, response) {
 
 
 function fetch(query, response) {
-
-    console.log("Request handler: fetch");
 
     var body;
 
@@ -278,7 +281,7 @@ function fetch(query, response) {
                 if (err) {
                     errorResponse(err, response);
                 } else {
-                    console.log(jsonresult);
+                    //console.log(jsonresult);
                     body = JSON.stringify(jsonresult) + "\n";
                     response.writeHead(200, {
                         "Content-Type": "text/plain",

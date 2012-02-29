@@ -1,7 +1,5 @@
 function route(handle, pathname, query, response) {
 
-    console.log("Routing for " + pathname);
-
     if (typeof handle[pathname] === 'function') {
         handle[pathname](query, response);
     } else {

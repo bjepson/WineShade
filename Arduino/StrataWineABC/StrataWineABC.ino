@@ -73,7 +73,7 @@ void log() {
 void flushMe() {
   delay(100);
   Serial.println("Clearing any incoming serial data.");
-  while(Serial1.available()) { // FIXME: does this need a timeout?
+  while(Serial1.available()) {
     char c = (char) Serial1.read();
     Serial.print(c);
     delay(1);
@@ -159,7 +159,8 @@ boolean configureRadio() {
 
   // Read the text of the response into the response variable
   String response = String("");
-  while (response.length() < ok_response.length()) { 
+  long curr = millis();
+  while (response.length() < ok_response.length() && curr + 10000 > millis() ) { 
     if (Serial1.available() > 0) {
       response += (char) Serial1.read(); 
     }
@@ -184,7 +185,8 @@ boolean configureRadio() {
 
     Serial1.print("ATCN\r"); // back to data mode
     String response = String("");
-    while (response.length() < ok_response.length()) { 
+    long curr = millis();
+    while (response.length() < ok_response.length() && curr + 10000 > millis() ) { 
       if (Serial1.available() > 0) {
         response += (char) Serial1.read();
       }
@@ -202,7 +204,6 @@ void setup() {
 
   for (int i = 0; i < numButtons; i++) {
     pinMode(buttons[i], INPUT);
-
     pinMode(leds[i],    OUTPUT); // Enable the LED for output
   }
   
