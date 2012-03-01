@@ -1,3 +1,7 @@
+Coming soon: 
+
+* a usable readme
+* Fritzing diagrams
 
 ConnectPort X2 Configuration:
     PAN ID: AAAA
