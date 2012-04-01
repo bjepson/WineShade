@@ -124,9 +124,9 @@ boolean getVotes() {
   }
 
   if (curr_button < numButtons - 1) {
-    Serial.print("Only received ");
+    Serial.print("Received ");
     Serial.print(curr_button);
-    Serial.print(", expected");
+    Serial.print(" button values , expected ");
     Serial.println(numButtons - 1);
     return false;
 
