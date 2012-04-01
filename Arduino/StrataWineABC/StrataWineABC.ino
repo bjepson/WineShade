@@ -16,6 +16,7 @@ BarGraph *bargraphs[3];
 int total = 0;
 
 String my_name = "UNDEFINED";
+String server = "10.0.1.26:8888";
 
 boolean debounce(int pin)
 {
@@ -71,12 +72,15 @@ void log() {
 }
 
 void flushMe() {
-  delay(100);
+  
+  Serial.println("Aborting any pending sessions");
+  Serial1.println("xig://abort");
+  Serial1.flush();
+  delay(1000);
   Serial.println("Clearing any incoming serial data.");
   while(Serial1.available()) {
     char c = (char) Serial1.read();
     Serial.print(c);
-    delay(1);
   }
   Serial.println("Done clearing incoming serial data.");
 }
@@ -84,7 +88,8 @@ void flushMe() {
 void vote(int button) {
 
   flushMe();
-  Serial1.println("http://192.168.2.1:8888/vote?s=" + my_name + "&b=" + button); 
+  Serial1.println("http://" + server + "/vote?s=" + my_name + "&b=" + button); 
+  Serial1.flush();
   delay(250);
   if (!getVotes()) {
     panic("Could not register vote"); // FIXME: recover by sending abort and trying again
@@ -94,32 +99,35 @@ void vote(int button) {
 
 boolean getVotes() {
 
-  delay(100);
+  delay(1000);
   for (int i = 0; i < numButtons; i++) {
     counts[i] = 0;
   }
 
   int curr_button = 0;
-  boolean finished = false;
-  while (!finished && Serial1.available() > 0) { // FIXME: does this need a timeout?
+  while (Serial1.available() > 0) {
 
     char ch = Serial1.read(); 
+    //Serial.print("> ");
+    //Serial.println(ch);
     if(ch >= '0' && ch <= '9') {
       counts[curr_button] = (counts[curr_button]  * 10) + (ch - '0');
     } 
     else if (ch == ':') {
       curr_button++;
     } 
-    else {
-      finished = true;
-    }
   }
 
   total = 0;
   for (int i = 0; i < numButtons; i++) {
     total += counts[i];
   }
+
   if (curr_button < numButtons - 1) {
+    Serial.print("Only received ");
+    Serial.print(curr_button);
+    Serial.print(", expected");
+    Serial.println(numButtons - 1);
     return false;
 
   } 
@@ -152,6 +160,7 @@ boolean configureRadio() {
   // put the radio in command mode: 
   Serial.println("Setting XBee command mode");
   Serial1.print("+++"); 
+  Serial1.flush();
   delay(100);
 
   String ok_response = "OK\r"; // the response we expect.
@@ -170,6 +179,7 @@ boolean configureRadio() {
   if (response.equals(ok_response)) {
     Serial.println("Requesting XBee device name");
     Serial1.print("ATNI\r"); // Get name
+    Serial1.flush();
     delay(100);
     while (Serial1.available() > 0) {
       char c = (char) Serial1.read(); 
@@ -184,6 +194,7 @@ boolean configureRadio() {
 
 
     Serial1.print("ATCN\r"); // back to data mode
+    Serial1.flush();
     String response = String("");
     long curr = millis();
     while (response.length() < ok_response.length() && curr + 10000 > millis() ) { 
@@ -209,7 +220,7 @@ void setup() {
   
   Serial.begin(9600);
   Serial.println("Booted. Waiting for XBee to warm up."); // FIXME: check XBee to see if it's associated instead of twiddling yer thumbs
-  Serial1.begin(9600); // The XBee
+  Serial1.begin(115200); // The XBee
   delay(5000);
 
   if (!configureRadio()) {
@@ -217,7 +228,9 @@ void setup() {
   }
 
   flushMe();
-  Serial1.println("http://192.168.2.1:8888/stationVotes?s=" + my_name); 
+  Serial1.println("http://" + server + "/stationVotes?s=" + my_name); 
+  Serial1.flush();
+  Serial.println("Trying http://" + server + "/stationVotes?s=" + my_name); 
   delay(250);
   if (!getVotes()) {
     panic("Could not retrieve votes"); // FIXME: recover by sending abort and trying again

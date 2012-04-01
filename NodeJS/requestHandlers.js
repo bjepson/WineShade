@@ -126,6 +126,8 @@ function stationVotes(query, response) {
 
     var counts = [0, 0, 0];
 
+    console.log("Got request for votes for station " + stationID);
+
     // Start serialized mode
     db.serialize(function() {
 
