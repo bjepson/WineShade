@@ -99,7 +99,7 @@ void vote(int button) {
 
 boolean getVotes() {
 
-  delay(1000);
+  delay(2000);
   for (int i = 0; i < numButtons; i++) {
     counts[i] = 0;
   }
@@ -108,14 +108,16 @@ boolean getVotes() {
   while (Serial1.available() > 0) {
 
     char ch = Serial1.read(); 
-    //Serial.print("> ");
-    //Serial.println(ch);
     if(ch >= '0' && ch <= '9') {
       counts[curr_button] = (counts[curr_button]  * 10) + (ch - '0');
     } 
     else if (ch == ':') {
       curr_button++;
-    } 
+    } else if (ch != '\n') {
+      Serial.print("Unexpected char [");
+      Serial.print(ch);
+      Serial.print("]");
+    }
   }
 
   total = 0;
@@ -126,7 +128,7 @@ boolean getVotes() {
   if (curr_button < numButtons - 1) {
     Serial.print("Received ");
     Serial.print(curr_button);
-    Serial.print(" button values , expected ");
+    Serial.print(" button values, expected ");
     Serial.println(numButtons - 1);
     return false;
 
@@ -138,6 +140,8 @@ boolean getVotes() {
 
 boolean panic(String s) {
 
+  delay(3000);
+  flushMe();
   Serial.println(s);
   while (1) {
     digitalWrite(leds[0], LOW);
