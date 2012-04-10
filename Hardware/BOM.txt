@@ -1,0 +1,18 @@
+For each station, you'll need:
+
+1 Lampshade.
+3 waterproof metal pushbuttons with LED ring. Adafruit part 481, 560, 559, or 558.
+3 LED bi-color bargraphs (this version uses only one color). Adafruit part 459.
+1 quarter sized perma-proto breadboard PCB. Adafruit part 589.
+1 XBee Series 2 (Series 1 might work). Maker Shed part MKDG02.
+1 European-Style Terminal strip. RadioShack 274-677.
+1 Arduino Mega. Maker Shed part MKSP5.
+1 XBee Adapter kit. Maker Shed part MKAD13.
+1 Prototyping shield (optional). I used the Adafruit Data Logging Shield, part 243.
+
+You'll also need these things:
+
+* Some foam board is useful for sliding behind the lampshade and mounting the buttons.
+* Ribbon wire
+* Hookup wire in various colors
+* ConnectPort X2 (commercial and industrial both tested). This is your XBee to Ethernet router. You need only one, no matter how many WineShades you make.
