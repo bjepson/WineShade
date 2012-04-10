@@ -9,6 +9,7 @@ For each station, you'll need:
 1 Arduino Mega. Maker Shed part MKSP5.
 1 XBee Adapter kit. Maker Shed part MKAD13.
 1 Prototyping shield (optional). I used the Adafruit Data Logging Shield, part 243.
+9 100 ohm resistors
 
 You'll also need these things:
 

@@ -1,3 +1,7 @@
 Requirements:
 
   node-sqlite: https://github.com/developmentseed/node-sqlite3
+
+To run it:
+
+  node index.js
